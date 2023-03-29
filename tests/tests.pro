@@ -1,2 +1,3 @@
 TEMPLATE=subdirs
-SUBDIRS += manual
+CONFIG += ordered
+SUBDIRS = errorhandling sftp remoteprocess shell sftpfsmodel
