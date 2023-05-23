@@ -39,6 +39,26 @@ namespace QSsh {
 namespace Internal {
 namespace {
 
+static QString strFileSize(quint64 filesize)
+{
+    if (filesize == 4096) {
+        return QString("");
+    }
+    if (filesize < 1024) {
+        return QString("%1 %2").arg(QString::number(filesize)).arg("bytes");
+    }
+    if (filesize > 1024 && filesize <= 1048576) {
+        return QString("%1 %2").arg(QString::number(filesize / 1024)).arg("KiB");
+    }
+    if (filesize > 1048576 && filesize <= 1073741824) {
+        return QString("%1 %2").arg(QString::number(filesize / 1024 / 1024)).arg("MiB");
+    }
+    if (filesize > 1073741824) {// && filesize <= 1099511627776) {
+        return QString("%1 %2").arg(QString::number(filesize / 1024 / 1024 / 1024)).arg("GiB");
+    }
+    return QString("unknow");
+}
+
 class SftpDirNode;
 class SftpFileNode
 {
@@ -156,7 +176,7 @@ SftpJobId SftpFileSystemModel::downloadFile(const QModelIndex &index, const QStr
 int SftpFileSystemModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return 2; // type + name
+    return 3; // type + name + size
 }
 
 QVariant SftpFileSystemModel::data(const QModelIndex &index, int role) const
@@ -166,11 +186,11 @@ QVariant SftpFileSystemModel::data(const QModelIndex &index, int role) const
         switch (node->fileInfo.type) {
         case FileTypeRegular:
         case FileTypeOther:
-            return QIcon(QLatin1String(":/core/images/unknownfile.png"));
+            return QIcon(QLatin1String(":images/icon/unknownfile.png"));
         case FileTypeDirectory:
-            return QIcon(QLatin1String(":/core/images/dir.png"));
+            return QIcon(QLatin1String(":images/icon/dir.png"));
         case FileTypeUnknown:
-            return QIcon(QLatin1String(":/core/images/help.png")); // Shows a question mark.
+            return QIcon(QLatin1String(":images/icon/help.png")); // Shows a question mark.
         }
     }
     if (index.column() == 1) {
@@ -179,7 +199,27 @@ QVariant SftpFileSystemModel::data(const QModelIndex &index, int role) const
         if (role == PathRole)
             return node->path;
     }
+    if (index.column() == 2) {
+        if (role == Qt::DisplayRole) {
+            return strFileSize(node->fileInfo.size);
+        }
+    }
     return QVariant();
+}
+
+QString SftpFileSystemModel::fileAbsPath(const QModelIndex& index) const
+{
+    const SftpFileNode * const fileNode = indexToFileNode(index);
+    return fileNode->path;
+}
+
+bool SftpFileSystemModel::isDirPath(const QModelIndex& index) const
+{
+    const SftpFileNode * const fileNode = indexToFileNode(index);
+    if (fileNode->fileInfo.type == FileTypeDirectory) {
+        return true;
+    }
+    return false;
 }
 
 Qt::ItemFlags SftpFileSystemModel::flags(const QModelIndex &index) const
@@ -199,6 +239,8 @@ QVariant SftpFileSystemModel::headerData(int section, Qt::Orientation orientatio
         return tr("File Type");
     if (section == 1)
         return tr("File Name");
+    if (section == 2)
+        return tr("Size");
     return QVariant();
 }
 

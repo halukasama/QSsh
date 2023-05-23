@@ -726,7 +726,7 @@ void SshConnectionPrivate::sendKeepAlivePacket()
 void SshConnectionPrivate::connectToHost()
 {
     QSSH_ASSERT_AND_RETURN(m_state == SocketUnconnected);
-
+    //D:/id_rsa
     m_incomingData.clear();
     m_incomingPacket.reset();
     m_sendFacility.reset();
